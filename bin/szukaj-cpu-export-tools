@@ -1,0 +1,29 @@
+#!/bin/sh
+# Narzędzia do jednorazowego eksportu modelu YOLO do OpenVINO (Ultralytics + PyTorch CPU).
+# Do pracy usługi nie są potrzebne – po eksporcie można je usunąć.
+#   sudo szukaj-cpu-export-tools install | remove | status
+set -e
+VENV=/opt/szukaj_cpu/venv
+PIP="$VENV/bin/pip"
+case "${1:-status}" in
+    install)
+        [ "$(id -u)" -eq 0 ] || { echo "Uruchom przez sudo." >&2; exit 1; }
+        echo "==> PyTorch (CPU) i Ultralytics – kilkaset MB"
+        "$PIP" install -q torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        "$PIP" install -q ultralytics
+        echo "Gotowe. Uruchom test (wyeksportuje model):  szukaj-cpu --test"
+        ;;
+    remove)
+        [ "$(id -u)" -eq 0 ] || { echo "Uruchom przez sudo." >&2; exit 1; }
+        "$PIP" uninstall -y -q ultralytics ultralytics-thop torch torchvision 2>/dev/null || true
+        echo "Usunięto narzędzia eksportu (gotowe modele w ~/.szukaj_cpu/models zostają)."
+        ;;
+    status)
+        if "$VENV/bin/python" -c "import ultralytics, torch" 2>/dev/null; then
+            echo "Narzędzia eksportu: zainstalowane"
+        else
+            echo "Narzędzia eksportu: brak (sudo szukaj-cpu-export-tools install)"
+        fi
+        ;;
+    *) echo "Użycie: szukaj-cpu-export-tools install|remove|status" >&2; exit 2 ;;
+esac

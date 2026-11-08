@@ -1,0 +1,34 @@
+# ntfy – lokalny serwer powiadomień dla szukaj_cpu
+# Generowany przez ntfy/setup-ntfy.sh (wartości @…@ podstawia skrypt).
+# Pełna lista opcji: https://docs.ntfy.sh/config/
+
+# Adres, pod którym TELEFON widzi serwer – z niego aplikacja pobiera treść i zdjęcia.
+# Poza domem telefon musi mieć dostęp do tego adresu (VPN, np. WireGuard/Tailscale,
+# albo reverse proxy z HTTPS).
+base-url: "@BASE_URL@"
+listen-http: ":@PORT@"
+
+# Wiadomości przechowywane na dysku – telefon odbierze je także po kilku dniach offline
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "@RETENTION@"
+
+# Zdjęcia (załączniki) – przechowywane tak długo jak galeria szukaj_cpu
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+attachment-total-size-limit: "2G"
+attachment-file-size-limit: "15M"
+attachment-expiry-duration: "@RETENTION@"
+visitor-attachment-total-size-limit: "1G"
+visitor-attachment-daily-bandwidth-limit: "2G"
+
+# Dostęp tylko dla zalogowanych użytkowników (szukaj_cpu publikuje tokenem)
+auth-file: "/var/lib/ntfy/auth.db"
+auth-default-access: "deny-all"
+
+# szukaj_cpu działa na tym samym serwerze – bez limitów zapytań dla localhost
+visitor-request-limit-exempt-hosts: "127.0.0.1,::1"
+
+# iOS: natychmiastowe powiadomienia z własnego serwera. ntfy.sh przekazuje do Apple
+# tylko sygnał „sprawdź temat” (skrót nazwy tematu) – treść i zdjęcie telefon pobiera
+# bezpośrednio z tego serwera. Bez tej linii iOS dostaje wiadomości dopiero po
+# otwarciu aplikacji. Android tego nie potrzebuje.
+upstream-base-url: "https://ntfy.sh"

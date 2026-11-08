@@ -1,0 +1,9 @@
+dist/
+ffmpeg-szukaj/
+__pycache__/
+*.pyc
+venv/
+*.pt
+*_openvino_model/
+/ffmpeg
+/ffprobe

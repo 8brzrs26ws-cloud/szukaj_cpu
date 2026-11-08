@@ -1,0 +1,22 @@
+# Alternatywa dla setup-ntfy.sh: ntfy w Dockerze (np. obok Pi-hole).
+# Przed startem utwórz server.yml z server.yml.in (podmień @BASE_URL@, @PORT@ = 80
+# wewnątrz kontenera, @RETENTION@), a użytkowników i token dodaj poleceniami:
+#   docker compose exec ntfy ntfy user add --role=user szukaj_cpu
+#   docker compose exec ntfy ntfy access szukaj_cpu szukaj write-only
+#   docker compose exec ntfy ntfy token add szukaj_cpu
+#   docker compose exec ntfy ntfy user add --role=user telefon
+#   docker compose exec ntfy ntfy access telefon szukaj read-only
+services:
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: ntfy
+    command: serve
+    restart: unless-stopped
+    ports:
+      - "8092:80"
+    volumes:
+      - ./server.yml:/etc/ntfy/server.yml:ro
+      - ./cache:/var/cache/ntfy
+      - ./lib:/var/lib/ntfy
+    environment:
+      - TZ=Europe/Warsaw
