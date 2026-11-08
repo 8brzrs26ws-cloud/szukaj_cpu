@@ -1,0 +1,5 @@
+# Zależności do pracy usługi (instalowane przez pakiet .deb w /opt/szukaj_cpu/venv).
+# Eksport modelu (Ultralytics + PyTorch) – osobno: sudo szukaj-cpu-export-tools install
+openvino>=2025.0
+opencv-python-headless>=4.8
+numpy>=1.26

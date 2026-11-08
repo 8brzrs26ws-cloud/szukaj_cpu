@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+case "$1" in
+remove|deconfigure)
+    if [ -d /run/systemd/system ]; then
+        for u in $(systemctl list-units --type=service --all --plain --no-legend 'szukaj_cpu@*' | awk '{print $1}'); do
+            systemctl stop "$u" || true
+        done
+    fi
+    ;;
+esac
+exit 0

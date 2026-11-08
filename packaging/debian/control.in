@@ -1,0 +1,20 @@
+Package: szukaj-cpu
+Version: @VERSION@
+Architecture: all
+Maintainer: szukaj_cpu <noreply@github.com>
+Section: video
+Priority: optional
+Depends: python3 (>= 3.11), python3-venv, ca-certificates
+Recommends: ffmpeg, intel-media-va-driver | i965-va-driver, vainfo
+Suggests: ntfy
+Installed-Size: @SIZE@
+Homepage: https://github.com/8brzrs26ws-cloud/szukaj_cpu
+Description: person detection on RTSP CCTV streams (YOLO on CPU, VAAPI decoding)
+ szukaj_cpu analyses keyframes from RTSP camera streams with a YOLO model
+ running on the CPU through OpenVINO, decodes video on the Intel iGPU
+ (VAAPI), and records events: thumbnails, full-resolution frames, clips cut
+ from the main stream, a browsable HTML gallery, ntfy push notifications and
+ events on the Shinobi CCTV timeline.
+ .
+ Installs to /opt/szukaj_cpu. Per-user configuration lives in
+ ~/.szukaj_cpu/szukaj_cpu.toml; the service is szukaj_cpu@<user>.service.

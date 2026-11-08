@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+case "$1" in
+remove|purge)
+    # środowisko Pythona utworzone przez postinst (nie należy do plików pakietu)
+    rm -rf /opt/szukaj_cpu/venv
+    find /opt/szukaj_cpu -depth -type d -empty -delete 2>/dev/null || true
+    if [ "$1" = purge ]; then
+        # włączone instancje usługi; konfiguracji użytkowników (~/.szukaj_cpu) nie ruszamy
+        rm -f /etc/systemd/system/multi-user.target.wants/szukaj_cpu@*.service
+        rm -rf /etc/systemd/system/szukaj_cpu@.service.d
+    fi
+    [ -d /run/systemd/system ] && systemctl daemon-reload || true
+    ;;
+esac
+exit 0

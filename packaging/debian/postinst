@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+DIR=/opt/szukaj_cpu
+VENV=$DIR/venv
+
+case "$1" in
+configure)
+    # środowisko Pythona z zależnościami do pracy usługi (OpenVINO, OpenCV, NumPy)
+    PYVER=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+    if [ -x "$VENV/bin/python" ] && ! "$VENV/bin/python" -c 'import sys; sys.exit(0 if "%d.%d" % sys.version_info[:2] == "'"$PYVER"'" else 1)' 2>/dev/null; then
+        echo "szukaj-cpu: zmieniła się wersja Pythona – odtwarzam środowisko"
+        rm -rf "$VENV"
+    fi
+    [ -x "$VENV/bin/python" ] || python3 -m venv "$VENV"
+    if [ "${SZUKAJ_CPU_SKIP_PIP:-0}" != 1 ]; then
+        echo "szukaj-cpu: instalacja zależności Pythona (OpenVINO, OpenCV) – wymaga internetu"
+        if ! { "$VENV/bin/pip" install -q --disable-pip-version-check --upgrade pip &&
+               "$VENV/bin/pip" install -q --disable-pip-version-check -r "$DIR/requirements.txt"; }; then
+            echo "szukaj-cpu: nie udało się pobrać zależności Pythona (brak internetu / PyPI?)." >&2
+            echo "  Po naprawie połączenia dokończ instalację:  sudo dpkg --configure -a" >&2
+            exit 1
+        fi
+    fi
+
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+        for u in $(systemctl list-units --type=service --state=active --plain --no-legend 'szukaj_cpu@*' | awk '{print $1}'); do
+            echo "szukaj-cpu: restart $u"
+            systemctl restart "$u" || true
+        done
+    fi
+
+    if [ -z "$2" ]; then
+        cat <<'MSG'
+
+szukaj-cpu zainstalowany w /opt/szukaj_cpu. Dalej (jako zwykły użytkownik):
+  szukaj-cpu --init                          # ~/.szukaj_cpu/szukaj_cpu.toml z szablonu
+  nano ~/.szukaj_cpu/szukaj_cpu.toml         # kamery, galeria, Shinobi, ntfy
+  sudo szukaj-cpu-export-tools install       # tylko jeśli nie masz jeszcze modelu OpenVINO
+  szukaj-cpu --test
+  sudo systemctl enable --now szukaj_cpu@$USER
+Lokalny serwer powiadomień: sudo bash /opt/szukaj_cpu/ntfy/setup-ntfy.sh --config ~/.szukaj_cpu/szukaj_cpu.toml
+
+MSG
+    fi
+    ;;
+esac
+exit 0

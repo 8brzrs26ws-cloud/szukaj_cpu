@@ -1,0 +1,180 @@
+# ══════════════════════════════════════════════════════════════════════
+#  szukaj_cpu.toml — configuration of the szukaj_cpu service (TOML format)
+#
+#  Text values go in "quotes", numbers and true/false without quotes.
+#  Location: ~/.szukaj_cpu/szukaj_cpu.toml (create it with: szukaj-cpu --init)
+#  Paths may start with ~ (home directory of the service user).
+#  Apply changes with:   sudo systemctl restart szukaj_cpu@$USER
+# ══════════════════════════════════════════════════════════════════════
+
+[paths]
+# Shinobi recordings directory. If `gallery` is empty, the gallery is
+# created next to it as <parent directory>/wyniki_osoby
+recordings = "/home/Shinobi/videos"
+
+# Gallery output (index.html, wyniki.csv, miniatury/, klipy/).
+# The service user needs write access to it.
+gallery = ""
+
+# Rolling stream buffer used to cut clips — kept in RAM, no disk wear
+buffer = "/dev/shm/szukaj_cpu"
+
+# YOLO model; downloaded if missing and exported next to it for OpenVINO (once,
+# needs the export tools: sudo szukaj-cpu-export-tools install)
+model = "~/.szukaj_cpu/models/yolo11s.pt"
+
+# "auto" = static build from ~/.szukaj_cpu/ or /opt/szukaj_cpu/ (see
+# tools/build_ffmpeg.sh) if present, otherwise the system one from PATH.
+# Or give a path, e.g. "/usr/bin/ffmpeg".
+ffmpeg = "auto"
+ffprobe = "auto"
+
+# Intel iGPU used for decoding (VAAPI); "" = decode on the CPU
+vaapi_device = "/dev/dri/renderD128"
+
+# Extra log file; "" = journal only (journalctl -u szukaj_cpu@$USER)
+log_file = ""
+
+
+[detection]
+# COCO classes to detect. Other useful ones:
+#   "car", "truck", "bus", "motorcycle", "bicycle", "dog", "cat", "bird", "backpack"
+classes = ["person"]
+
+# Minimum detection confidence 0–1 (higher = fewer false alarms)
+confidence = 0.50
+
+# Model input width: 640 = fast; 960 = better for small, distant people (~2x slower)
+imgsz = 960
+
+# Shape of the model input (OpenVINO): "16:9" matches the cameras, so no time is
+# spent on grey padding (960 -> 960x544, ~40% faster than "square" 960x960)
+aspect_ratio = "16:9"
+
+# "openvino" (recommended on Intel CPUs, much faster) or "pytorch"
+engine = "openvino"
+
+# CPU threads used for one inference; 0 = all cores. On the i5-7500, 4 threads
+# give ~190–200 ms per frame at 960x544 while the service is running.
+threads = 4
+
+# Keyframes with a detection needed to record an event (1 = most sensitive)
+min_hits = 1
+
+# An event ends after this many seconds without a detection
+event_gap = 10
+
+# Frames taller than this are scaled down (e.g. 4K -> 1080p); 0 = no scaling
+max_height = 1080
+
+# Which frames are analysed:
+#   "interval"  – the iGPU decodes the whole stream and one frame every
+#                 analysis_interval seconds is picked (independent of the camera
+#                 I-frame interval, so the camera can keep a long GOP = smaller files)
+#   "keyframes" – only keyframes are decoded (least work, but depends on the camera GOP).
+#                 Recommended with analysis_url = substream with a 1 s I-frame interval.
+frame_selection = "keyframes"
+analysis_interval = 1.0
+
+# Reconnect when no frame arrives for this many seconds
+watchdog = 30
+
+
+[clips]
+# Cut a clip for every event (stream copy, no re-encoding)
+enabled = true
+# Seconds before the first and after the last detection
+pre_seconds = 3
+post_seconds = 5
+# Maximum clip length in seconds
+max_length = 300
+# Buffer segment length in seconds — clip start/end precision
+segment_length = 4
+
+
+[gallery]
+# Delete entries, thumbnails and clips older than N days (same as Shinobi retention)
+retention_days = 5
+# Auto-refresh of the gallery page in the browser (seconds); 0 = off
+refresh_seconds = 60
+# Built-in web server, e.g. 8090 -> http://server:8090/ ; 0 = off
+# (no password — home network only)
+http_port = 0
+
+# Full-resolution frame from the MAIN stream for every event (taken from the clip
+# buffer at the moment of the best detection, re-analysed for accurate boxes).
+# Requires [clips] enabled = true.
+full_frame = true
+# "jxl" (smallest; shown by Safari, Chrome only with a flag, not Firefox),
+# "jpg" (works everywhere) or "webp"
+full_format = "jxl"
+# 0–100; for jxl 90 = visually lossless (libjxl distance 1.0)
+full_quality = 90
+# Gallery thumbnail width (JPEG) made from the full frame; 0 = full size
+thumb_width = 1280
+
+
+[notifications]
+# Push notification with a photo via ntfy (ntfy app for Android/iOS); "" = off.
+# Local server (recommended – messages and photos are kept until read, see ntfy/):
+#   ntfy_url = "http://SERVER:8092/szukaj"
+# Public server: "https://ntfy.sh/my_secret_topic_12345"
+ntfy_url = ""
+# Access token of the publishing user (ntfy token add ...); "" = no auth
+ntfy_token = ""
+# min, low, default, high, max
+priority = "high"
+# Opened when the notification is tapped, e.g. the gallery "http://SERVER:8091/"
+click_url = ""
+# Minimum time between notifications from one camera (seconds)
+min_interval = 120
+
+
+[shinobi]
+# Mark events on the Shinobi timeline (API /motion); empty keys = off
+# Shinobi panel address (on the same server usually http://127.0.0.1:8080)
+url = "http://127.0.0.1:8080"
+# API key: Shinobi panel -> user menu -> API -> add key (monitor access, IP 127.0.0.1)
+api_key = ""
+# Group key: Shinobi panel -> user menu -> Settings -> Group Key
+group_key = ""
+# Re-send the event every N seconds while the object stays visible
+# (keeps Watch-Only recording going); 0 = once per event
+repeat_seconds = 30
+
+
+# ─── Cameras: one [[camera]] block per stream ─────────────────────────
+#   name            – short name (used in file names and the gallery)
+#   url             – full RTSP address of the recorded (main) stream; clips are cut from it
+#   analysis_url    – optional separate stream used only for detection, e.g. the camera
+#                     substream with a 1 s I-frame interval and Smart Codec off – the main
+#                     stream can then keep a long GOP / Smart Codec (small recordings).
+#                     "" = analyse the main stream
+#   enabled         – false = temporarily disable the camera
+#   shinobi_monitor – Shinobi Monitor ID (monitor settings), "" = no timeline marking
+#   zone            – optional polygon in 0–1 frame coordinates, [[x, y], ...];
+#                     only objects whose "feet" (bottom centre of the box) are
+#                     inside count, e.g. ignore the sidewalk behind the gate:
+#                     zone = [[0, 0.35], [1, 0.35], [1, 1], [0, 1]]
+
+# Example addresses:
+#   Dahua  main: rtsp://USER:PASS@IP:554/cam/realmonitor?channel=1&subtype=0
+#          sub:  rtsp://USER:PASS@IP:554/cam/realmonitor?channel=1&subtype=1
+#   Tiandy main: rtsp://USER:PASS@IP:554/Streaming/Channels/101/
+#          sub:  rtsp://USER:PASS@IP:554/Streaming/Channels/102/
+
+[[camera]]
+name = "brama"
+url = "rtsp://FILL_IN"
+analysis_url = ""
+enabled = true
+shinobi_monitor = ""
+zone = []
+
+[[camera]]
+name = "podworko"
+url = "rtsp://FILL_IN"
+analysis_url = ""
+enabled = true
+shinobi_monitor = ""
+zone = []

@@ -1,0 +1,24 @@
+# Instancja na użytkownika, którego ~/.szukaj_cpu/szukaj_cpu.toml jest używany:
+#   sudo systemctl enable --now szukaj_cpu@<użytkownik>
+[Unit]
+Description=szukaj_cpu - wykrywanie osob na kamerach RTSP (%i)
+Documentation=https://github.com/8brzrs26ws-cloud/szukaj_cpu
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+SupplementaryGroups=render video
+# ~ = katalog domowy użytkownika z User=; konfiguracja: ~/.szukaj_cpu/szukaj_cpu.toml
+WorkingDirectory=~
+ExecStart=/opt/szukaj_cpu/venv/bin/python /opt/szukaj_cpu/szukaj_cpu.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=15
+# bez limitu rdzeni; niższy priorytet sprawia, że Shinobi zawsze ma pierwszeństwo
+Nice=10
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target
