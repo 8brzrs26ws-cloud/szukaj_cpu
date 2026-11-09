@@ -110,7 +110,7 @@ if [ "$DO_LEGACY" = 1 ]; then
         if [ -d "$OLD" ]; then
             if ask "Usunąć katalog $OLD (skrypt, venv, kopie)?"; then
                 run rm -rf "$OLD" 2>/dev/null || run $SUDO rm -rf "$OLD"
-                echo "  usunięto $OLD"
+                [ "$DRY" = 1 ] || echo "  usunięto $OLD"
             else
                 echo "  pozostawiono $OLD"
             fi
@@ -138,11 +138,17 @@ fi
 if [ "$PURGE" = 1 ] && [ -d "$NEW" ]; then
     if ask "Usunąć także $NEW (konfiguracja z hasłami kamer, modele)?"; then
         run rm -rf "$NEW"
-        echo "  usunięto $NEW"
+        [ "$DRY" = 1 ] || echo "  usunięto $NEW"
     fi
 fi
 
-echo "Gotowe."
+if [ "$DRY" = 1 ]; then echo "Gotowe (podgląd – nic nie zostało zmienione)."; else echo "Gotowe."; fi
 if [ "$DO_LEGACY" = 1 ] && [ "$MIGRATE" = 1 ] && ! dpkg -s szukaj-cpu >/dev/null 2>&1; then
-    echo "Dalej: sudo apt install ./szukaj-cpu_*_all.deb && sudo systemctl enable --now szukaj_cpu@$USR"
+    HERE="$(cd "$(dirname "$0")" && pwd)"
+    echo "Dalej:"
+    echo "  bash $HERE/packaging/build-deb.sh            # jeśli pakiet nie jest jeszcze zbudowany"
+    echo "  sudo apt install $HERE/dist/szukaj-cpu_*_all.deb"
+    echo "  szukaj-cpu --test"
+    echo "  sudo systemctl enable --now szukaj_cpu@$USR"
+    echo "Nieużywane modele w ~/.szukaj_cpu/models (inne niż ustawione w imgsz) można usunąć."
 fi
