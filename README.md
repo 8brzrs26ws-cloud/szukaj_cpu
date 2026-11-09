@@ -121,7 +121,7 @@ sudo bash /opt/szukaj_cpu/ntfy/setup-ntfy.sh --config ~/.szukaj_cpu/szukaj_cpu.t
 sudo systemctl restart szukaj_cpu@$USER
 ```
 
-It installs ntfy from the project's apt repository, writes `/etc/ntfy/server.yml` (port 8092),
+It installs ntfy from the project's apt repository (archive.ntfy.sh, falling back to the Debian package), writes `/etc/ntfy/server.yml` (port 8092),
 creates a write-only user `szukaj_cpu` with a token (written to the config) and a read-only
 user for the phone. In the ntfy app add the server, log in and subscribe to the topic
 (`szukaj` by default).

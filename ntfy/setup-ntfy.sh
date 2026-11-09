@@ -7,7 +7,7 @@
 #  wiadomości i zdjęcia przez RETENTION (domyślnie 5 dni, jak galeria).
 #
 #  Co robi:
-#   1. instaluje ntfy z oficjalnego repozytorium projektu (archive.heckel.io),
+#   1. instaluje ntfy z oficjalnego repozytorium projektu (archive.ntfy.sh),
 #   2. zapisuje /etc/ntfy/server.yml (kopia zapasowa starego),
 #   3. tworzy użytkownika-nadawcę „szukaj_cpu” (tylko zapis do tematu) i jego token,
 #   4. tworzy użytkownika dla telefonu (tylko odczyt tematu),
@@ -52,14 +52,23 @@ TEMPLATE="$HERE/server.yml.in"
 echo "==> ntfy: $BASE_URL, temat: $TOPIC, przechowywanie: $RETENTION"
 
 # ── 1. instalacja ──
+# Oficjalne repozytorium projektu (od 09.2025 archive.ntfy.sh; stare archive.heckel.io wyłączone),
+# a gdyby było nieosiągalne – pakiet z Debiana (starsza wersja, ale ta sama konfiguracja).
+rm -f /etc/apt/sources.list.d/archive.heckel.io.list /usr/share/keyrings/archive.heckel.io.gpg
 if ! command -v ntfy >/dev/null 2>&1; then
-    echo "==> Instalacja ntfy (repozytorium archive.heckel.io)"
     apt-get update -qq
-    apt-get install -y -qq curl gpg ca-certificates >/dev/null
-    curl -fsSL https://archive.heckel.io/apt/pubkey.txt | gpg --dearmor --yes -o /usr/share/keyrings/archive.heckel.io.gpg
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/archive.heckel.io.gpg] https://archive.heckel.io/apt debian main" \
-        > /etc/apt/sources.list.d/archive.heckel.io.list
-    apt-get update -qq
+    apt-get install -y -qq curl ca-certificates >/dev/null
+    ARCH="$(dpkg --print-architecture)"
+    install -d -m 755 /etc/apt/keyrings
+    if curl -fsSL -o /etc/apt/keyrings/ntfy.gpg https://archive.ntfy.sh/apt/keyring.gpg; then
+        echo "==> Instalacja ntfy (repozytorium archive.ntfy.sh)"
+        echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/ntfy.gpg] https://archive.ntfy.sh/apt stable main" \
+            > /etc/apt/sources.list.d/ntfy.list
+        apt-get update -qq
+    else
+        echo "==> archive.ntfy.sh niedostępne – instaluję ntfy z repozytorium Debiana"
+        rm -f /etc/apt/keyrings/ntfy.gpg
+    fi
     apt-get install -y -qq ntfy >/dev/null
 fi
 ntfy --help >/dev/null 2>&1 || { echo "ntfy nie działa po instalacji" >&2; exit 1; }
