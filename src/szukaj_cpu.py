@@ -63,7 +63,7 @@ NAME_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})")   # jak w
 SEG_RE = re.compile(r"^(\d{8}-\d{6})\.ts$")
 TS_FMT = "%Y-%m-%d %H:%M:%S"
 FILE_TS = "%Y-%m-%dT%H-%M-%S"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 CONF_DIR = Path(os.path.expanduser("~/.szukaj_cpu"))
 DEFAULT_CONF = "~/.szukaj_cpu/szukaj_cpu.toml"
 
@@ -1276,6 +1276,40 @@ def init_config(path):
     return 0
 
 
+def rss_mb(pid="self"):
+    try:
+        for line in open(f"/proc/{pid}/status"):
+            if line.startswith("VmRSS:"):
+                return int(line.split()[1]) / 1024
+    except OSError:
+        pass
+    return 0.0
+
+
+def log_memory(cams):
+    """Pamięć procesu, procesów ffmpeg i bufora segmentów w /dev/shm (liczony do pamięci usługi)."""
+    ff = sum(rss_mb(p.pid) for c in cams for p in (c.proc, c.rec_proc) if p is not None and p.poll() is None)
+    buf, n = 0, 0
+    for c in cams:
+        for _, p in list_segments(c.buf):
+            try:
+                buf += p.stat().st_size
+                n += 1
+            except OSError:
+                pass
+    log.info("Pamięć: szukaj_cpu %.0f MB, ffmpeg %.0f MB, bufor klipów %.0f MB (%d segmentów)",
+             rss_mb(), ff, buf / 1048576, n)
+
+
+def hard_exit(code):
+    """Zakończenie bez sprzątania wątków C++ OpenVINO przy zamykaniu interpretera – inaczej
+    kończy się to 'terminate called without an active exception' (SIGABRT)."""
+    logging.shutdown()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Wykrywanie osób na żywo z kamer RTSP (YOLO na CPU).")
     ap.add_argument("-c", "--config", default=DEFAULT_CONF, help=f"plik konfiguracji (domyślnie {DEFAULT_CONF})")
@@ -1321,7 +1355,7 @@ def main():
         STOP.set()
         for cam in cams:
             cam.stop()
-        sys.exit(0 if ok else 1)
+        hard_exit(0 if ok else 1)
 
     clipper = Clipper(cfg, cams, gallery, det)
     threading.Thread(target=clipper.loop, name="klipy", daemon=True).start()
@@ -1357,6 +1391,7 @@ def main():
             if det.n:
                 log.info("Inferencja: śr. %.0f ms/klatkę (%d klatek)", det.ms_total / det.n, det.n)
                 det.ms_total, det.n = 0.0, 0
+            log_memory(cams)
             last_stats = now
         if not busy:
             STOP.wait(0.05)
@@ -1368,6 +1403,7 @@ def main():
             close_event(cfg, cam, gallery, clipper)
     clipper.run_due(force=True)
     log.info("Zatrzymano.")
+    hard_exit(0)
 
 
 if __name__ == "__main__":

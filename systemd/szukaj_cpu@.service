@@ -14,6 +14,11 @@ SupplementaryGroups=render video
 WorkingDirectory=~
 ExecStart=/opt/szukaj_cpu/venv/bin/python /opt/szukaj_cpu/szukaj_cpu.py
 Environment=PYTHONUNBUFFERED=1
+# glibc malloc: duże bufory klatek (kilka MB) zawsze przez mmap i zwracane do systemu,
+# mniej aren – bez tego pamięć procesu rośnie przez fragmentację przy długiej pracy
+Environment=MALLOC_ARENA_MAX=2
+Environment=MALLOC_MMAP_THRESHOLD_=1048576
+Environment=MALLOC_TRIM_THRESHOLD_=4194304
 Restart=always
 RestartSec=15
 # bez limitu rdzeni; niższy priorytet sprawia, że Shinobi zawsze ma pierwszeństwo
