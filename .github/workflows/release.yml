@@ -1,0 +1,38 @@
+# Po wypchnięciu tagu vX.Y.Z buduje pakiet .deb i publikuje wydanie z plikiem pakietu.
+#   git tag v1.0.1 && git push origin v1.0.1
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wersja z tagu musi zgadzać się z plikiem VERSION
+        run: |
+          test "v$(tr -d ' \n' < VERSION)" = "$GITHUB_REF_NAME" \
+            || { echo "Tag $GITHUB_REF_NAME nie pasuje do VERSION ($(cat VERSION))"; exit 1; }
+
+      - name: Sprawdzenie składni
+        run: |
+          python3 -m py_compile src/szukaj_cpu.py tools/test_przerwy.py
+          for f in uninstall.sh packaging/build-deb.sh ntfy/setup-ntfy.sh tools/build_ffmpeg.sh; do bash -n "$f"; done
+          for f in packaging/debian/postinst packaging/debian/prerm packaging/debian/postrm bin/szukaj-cpu bin/szukaj-cpu-export-tools; do sh -n "$f"; done
+
+      - name: Budowa pakietu
+        run: bash packaging/build-deb.sh
+
+      - name: Wydanie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="release-notes/${GITHUB_REF_NAME}.md"
+          if [ -f "$NOTES" ]; then ARGS=(--notes-file "$NOTES"); else ARGS=(--generate-notes); fi
+          gh release create "$GITHUB_REF_NAME" dist/*.deb --title "szukaj_cpu ${GITHUB_REF_NAME#v}" "${ARGS[@]}"
