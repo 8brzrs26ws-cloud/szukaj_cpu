@@ -63,7 +63,7 @@ NAME_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})")   # jak w
 SEG_RE = re.compile(r"^(\d{8}-\d{6})\.ts$")
 TS_FMT = "%Y-%m-%d %H:%M:%S"
 FILE_TS = "%Y-%m-%dT%H-%M-%S"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 CONF_DIR = Path(os.path.expanduser("~/.szukaj_cpu"))
 DEFAULT_CONF = "~/.szukaj_cpu/szukaj_cpu.toml"
 
