@@ -129,8 +129,12 @@ user for the phone. In the ntfy app add the server, log in and subscribe to the 
 * **iOS:** the config sets `upstream-base-url: https://ntfy.sh`, which is required for instant
   notifications from a self-hosted server; only a "poll this topic" signal goes through ntfy.sh,
   the message and photo are fetched from your server.
-* **Outside the home network** the phone must reach `base-url` – use a VPN (WireGuard,
-  Tailscale) or a reverse proxy with HTTPS.
+* **Outside the home network** the phone must reach `base-url`, because photos are downloaded
+  from it. If Tailscale is logged in on the server, the script uses its
+  `https://<server>.<tailnet>.ts.net` address and enables `tailscale serve` for ntfy
+  (tailnet only); on the iPhone set Tailscale *VPN On Demand* to *Always*. Without Tailscale
+  it falls back to the LAN address and warns. The address is stored in every message when it
+  is sent, so older notifications keep the previous one.
 * `ntfy/docker-compose.yml` is an alternative for running ntfy in Docker.
 
 ## Optional: minimal static ffmpeg
