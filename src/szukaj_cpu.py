@@ -65,7 +65,7 @@ NAME_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})")   # jak w
 SEG_RE = re.compile(r"^(\d{8}-\d{6})\.ts$")
 TS_FMT = "%Y-%m-%d %H:%M:%S"
 FILE_TS = "%Y-%m-%dT%H-%M-%S"
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 CONF_DIR = Path(os.path.expanduser("~/.szukaj_cpu"))
 DEFAULT_CONF = "~/.szukaj_cpu/szukaj_cpu.toml"
 
@@ -1304,6 +1304,18 @@ pre{background:var(--card);border:1px solid var(--line);border-radius:8px;paddin
 #msg{min-height:1.4em;font-size:14px}.ok{color:var(--ok)}.err{color:var(--err)}
 .leg{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:13px}
 .leg i{display:inline-block;width:14px;height:3px;border-radius:2px}
+details.intro{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:0 14px}
+details.intro summary{cursor:pointer;padding:11px 0;font-weight:600}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:12px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#15171b}
+.card h3{margin:0 0 6px;font-size:15px}
+.card h3 i{width:14px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:8px}
+.card p,.card li{font-size:13.5px;color:#c9ccd1;margin:4px 0}.card ul{margin:4px 0;padding-left:18px}
+.card svg{display:block;width:100%;max-width:260px;height:auto;margin:6px 0;border-radius:6px}
+.tip{font-size:13.5px;color:#c9ccd1;padding-bottom:12px;margin:0}
+#info{font-size:13.5px;margin:6px 0;padding:8px 12px;border-left:3px solid var(--line);background:var(--card);border-radius:0 8px 8px 0}
+#info b{color:var(--fg)}#info .w{color:#ffc46b}
 </style></head><body><main>
 <h1>Obszar detekcji kamer</h1>
 <p class="sub"><a href="/">← galeria</a> · zmiany działają od razu po zapisie i trafiają do pliku konfiguracji</p>
@@ -1315,8 +1327,42 @@ pre{background:var(--card);border:1px solid var(--line);border-radius:8px;paddin
   <span class="leg"><i style="background:var(--zone)"></i>strefa</span>
   <span class="leg"><i style="background:var(--crop)"></i>przycięcie</span>
 </div>
+<details class="intro" id="intro" open>
+<summary>Co to jest strefa i przycięcie? (kliknij, aby zwinąć)</summary>
+<div class="cards">
+ <div class="card">
+  <h3><i style="background:var(--zone)"></i>Strefa – <em>gdzie</em> osoba ma się liczyć</h3>
+  <svg viewBox="0 0 260 120" aria-hidden="true"><rect width="260" height="120" fill="#000"/>
+   <polygon points="40,50 220,40 250,118 10,118" fill="rgba(78,161,255,.18)" stroke="#4ea1ff" stroke-width="2"/>
+   <g fill="#e6e6e6"><circle cx="70" cy="22" r="5"/><rect x="65" y="28" width="10" height="20" rx="3"/></g>
+   <g fill="#4cc38a"><circle cx="150" cy="62" r="6"/><rect x="144" y="69" width="12" height="26" rx="3"/></g>
+   <text x="88" y="38" fill="#9aa0a6" font-size="11">poza strefą – pomijana</text>
+   <text x="104" y="110" fill="#4cc38a" font-size="11">w strefie – alarm</text></svg>
+  <ul><li>Model nadal analizuje <b>cały kadr</b>; strefa tylko filtruje wyniki.</li>
+   <li>Liczy się miejsce <b>stóp</b> osoby (dół ramki), więc obrysuj podłoże: podjazd, ścieżkę, furtkę.</li>
+   <li>Do czego: pomijanie przechodniów na chodniku i ulicy, sąsiedniej posesji.</li>
+   <li>Brak strefy = liczy się cały kadr.</li></ul>
+ </div>
+ <div class="card">
+  <h3><i style="background:var(--crop)"></i>Przycięcie – <em>co</em> model w ogóle ogląda</h3>
+  <svg viewBox="0 0 260 120" aria-hidden="true"><rect width="260" height="120" fill="#000"/>
+   <rect x="0" y="0" width="260" height="120" fill="rgba(0,0,0,.55)"/>
+   <rect x="120" y="10" width="130" height="80" fill="#0d1a26" stroke="#ff9f2e" stroke-width="2" stroke-dasharray="7 5"/>
+   <g fill="#e6e6e6"><circle cx="185" cy="38" r="4"/><rect x="181" y="43" width="8" height="15" rx="2"/></g>
+   <g fill="#555"><circle cx="50" cy="60" r="6"/><rect x="44" y="67" width="12" height="26" rx="3"/></g>
+   <text x="8" y="112" fill="#9aa0a6" font-size="11">poza prostokątem – niewidoczne</text>
+   <text x="126" y="84" fill="#ffb35c" font-size="11">powiększony fragment</text></svg>
+  <ul><li>Do modelu trafia <b>tylko fragment</b> w prostokącie, poza nim nikt nie zostanie wykryty.</li>
+   <li>Mniejszy fragment jest powiększany, więc <b>dalekie, małe postacie</b> wykrywa się lepiej.</li>
+   <li>Powiększenie działa, gdy prostokąt jest wyraźnie <b>węższy</b> od kadru; pas na całą szerokość nic nie powiększa.</li>
+   <li>Brak przycięcia = model ogląda cały kadr (zalecane na start).</li></ul>
+ </div>
+</div>
+<p class="tip"><b>Którą wybrać?</b> Chcesz ignorować ulicę, chodnik lub sąsiada? Użyj <b>strefy</b>. Interesuje Cię odległy fragment (np. furtka w głębi kadru) i osoby są tam za małe? Użyj <b>przycięcia</b>. Można łączyć oba: strefa działa wtedy w obrębie przyciętego fragmentu. Po zapisie sprawdź w galerii, czy zdarzenia się pojawiają.</p>
+</details>
 <div class="stage" id="stage"><img id="img" alt=""><canvas id="cv"></canvas></div>
 <p class="help" id="help"></p>
+<div id="info"></div>
 <div class="bar">
   <button id="undo">Cofnij punkt</button>
   <button id="clearZone">Usuń strefę</button>
@@ -1333,6 +1379,7 @@ const HELP = {
   zone: "Kliknij, aby dodać narożnik strefy. Przeciągnij punkt, aby go przesunąć; prawy przycisk na punkcie usuwa go. Liczą się osoby, których stopy (dół ramki) są w strefie.",
   crop: "Przeciągnij, aby zaznaczyć prostokąt – model analizuje tylko ten fragment kadru (większe postacie = lepsza wykrywalność w oddali). Przeciągnij narożnik, aby zmienić rozmiar."
 };
+let model = null;
 let cams = [], cam = null, mode = "zone", zone = [], crop = null, drag = null, restartOk = false;
 const cv = $("cv"), ctx = cv.getContext("2d"), img = $("img");
 const r4 = v => Math.round(Math.min(1, Math.max(0, v)) * 10000) / 10000;
@@ -1370,6 +1417,27 @@ function draw() {
     zone.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x * W, y * H, (mode === "zone" ? 6 : 3) * d, 0, 7); ctx.fillStyle = "#4ea1ff"; ctx.fill(); });
   }
   $("toml").textContent = tomlText();
+  info();
+}
+function pct(v) { return Math.round(v * 100) + "%"; }
+function info() {
+  const out = [];
+  if (zone.length >= 3) out.push(`<b>Strefa:</b> alarm tylko dla osób stojących w niebieskim obszarze.`);
+  else if (zone.length) out.push(`<b>Strefa:</b> <span class="w">dodaj jeszcze ${3 - zone.length} pkt (min. 3), inaczej nie zostanie zapisana.</span>`);
+  else out.push(`<b>Strefa:</b> brak – liczy się cały ${crop ? "przycięty fragment" : "kadr"}.`);
+  if (crop) {
+    const cw = crop[2] - crop[0], ch = crop[3] - crop[1];
+    let s = `<b>Przycięcie:</b> model widzi ${pct(cw)} szerokości × ${pct(ch)} wysokości kadru; <span class="w">osoby poza pomarańczowym prostokątem nie będą wykrywane.</span>`;
+    const W = img.naturalWidth, H = img.naturalHeight;
+    if (model && W && H) {
+      const g = Math.min(model[0] / (cw * W), model[1] / (ch * H)) / Math.min(model[0] / W, model[1] / H);
+      s += g < 1.15
+        ? ` Powiększenie ×${g.toFixed(1)}: <span class="w">postacie będą praktycznie tej samej wielkości co bez przycięcia. Zwęź prostokąt w poziomie, aby zyskać na wykrywalności, albo do samego ograniczania obszaru użyj strefy.</span>`
+        : ` Powiększenie ×${g.toFixed(1)}: postacie w tym fragmencie są dla modelu ${g.toFixed(1)}× większe niż przy całym kadrze.`;
+    }
+    out.push(s);
+  } else out.push(`<b>Przycięcie:</b> brak – model ogląda cały kadr.`);
+  $("info").innerHTML = out.join("<br>");
 }
 function pos(e) { const b = cv.getBoundingClientRect(); return [(e.clientX - b.left) / b.width, (e.clientY - b.top) / b.height]; }
 function near(p, q, px) { const b = cv.getBoundingClientRect(); return Math.hypot((p[0] - q[0]) * b.width, (p[1] - q[1]) * b.height) < px; }
@@ -1454,7 +1522,9 @@ window.addEventListener("resize", draw);
 (async () => {
   try {
     const j = await api("/api/cameras");
-    cams = j.cameras; restartOk = j.restart;
+    cams = j.cameras; restartOk = j.restart; model = j.model || null;
+    try { if (localStorage.getItem("szukaj_intro") === "0") $("intro").open = false; } catch (e) {}
+    $("intro").addEventListener("toggle", () => { try { localStorage.setItem("szukaj_intro", $("intro").open ? "1" : "0"); } catch (e) {} });
     $("cam").innerHTML = cams.map(c => `<option>${c.name}</option>`).join("");
     if (!restartOk) $("restart").title = "Dostępne tylko przy uruchomieniu przez systemd";
     setMode("zone"); loadCam();
@@ -1538,7 +1608,8 @@ def start_http(cfg, cams=()):
                     out.append({"name": c.name,
                                 "zone": c.zone.round(4).tolist() if c.zone is not None else [],
                                 "crop": list(c.crop) if c.crop is not None else []})
-                return self._send(200, {"cameras": out, "restart": under_systemd})
+                return self._send(200, {"cameras": out, "restart": under_systemd,
+                                        "model": [cfg.input_hw[1], cfg.input_hw[0]]})
             if u.path == "/api/snapshot":
                 c = cams_by_name.get(urllib.parse.parse_qs(u.query).get("cam", [""])[0])
                 snap = c.snap if c else None
