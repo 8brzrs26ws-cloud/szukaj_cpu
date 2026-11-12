@@ -47,14 +47,14 @@ events ──► gallery (index.html, wyniki.csv, thumbnails, clips, full frames
 Build the package (any Debian/Ubuntu machine with `dpkg-deb`):
 
 ```bash
-bash packaging/build-deb.sh            # → dist/szukaj-cpu_1.0.3_all.deb
+bash packaging/build-deb.sh            # → dist/szukaj-cpu_1.0.4_all.deb
 ```
 
 Install on the server (needs internet access – the post-install step creates the Python
 environment with OpenVINO and OpenCV):
 
 ```bash
-sudo apt install ./szukaj-cpu_1.0.3_all.deb
+sudo apt install ./szukaj-cpu_1.0.4_all.deb
 szukaj-cpu --init                       # creates ~/.szukaj_cpu/szukaj_cpu.toml
 nano ~/.szukaj_cpu/szukaj_cpu.toml      # cameras, gallery path, Shinobi, ntfy
 sudo usermod -aG render,video $USER     # iGPU access (log in again)
@@ -80,7 +80,7 @@ journalctl -u szukaj_cpu@$USER -f
 ```bash
 bash uninstall.sh          # stops szukaj_cpu.service, moves config, models and static
                            # ffmpeg to ~/.szukaj_cpu, removes ~/szukaj_cpu
-sudo apt install ./szukaj-cpu_1.0.3_all.deb
+sudo apt install ./szukaj-cpu_1.0.4_all.deb
 sudo systemctl enable --now szukaj_cpu@$USER
 ```
 
