@@ -98,8 +98,15 @@ retention_days = 5
 # Auto-refresh of the gallery page in the browser (seconds); 0 = off
 refresh_seconds = 60
 # Built-in web server, e.g. 8090 -> http://server:8090/ ; 0 = off
-# (no password — home network only)
+# (without http_user/http_password: no login – home network only)
 http_port = 0
+# Login for the gallery web server. When both are set, the whole site requires
+# this login and the settings panel /admin/ is enabled (camera selection,
+# drawing the detection zone and crop, saving this file, service restart).
+# Basic auth – over the network use HTTPS, e.g. Tailscale:
+#   sudo tailscale serve --bg --https=8443 http://localhost:8091
+http_user = ""
+http_password = ""
 
 # Full-resolution frame from the MAIN stream for every event (taken from the clip
 # buffer at the moment of the best detection, re-analysed for accurate boxes).
@@ -152,6 +159,9 @@ repeat_seconds = 30
 #                     "" = analyse the main stream
 #   enabled         – false = temporarily disable the camera
 #   shinobi_monitor – Shinobi Monitor ID (monitor settings), "" = no timeline marking
+#   crop            – optional rectangle [x1, y1, x2, y2] (0–1) – only this part of
+#                     the frame is analysed (people appear larger to the model);
+#                     [] = whole frame. Easiest to set in the web panel /admin/
 #   zone            – optional polygon in 0–1 frame coordinates, [[x, y], ...];
 #                     only objects whose "feet" (bottom centre of the box) are
 #                     inside count, e.g. ignore the sidewalk behind the gate:
@@ -170,6 +180,7 @@ analysis_url = ""
 enabled = true
 shinobi_monitor = ""
 zone = []
+crop = []
 
 [[camera]]
 name = "podworko"
@@ -178,3 +189,4 @@ analysis_url = ""
 enabled = true
 shinobi_monitor = ""
 zone = []
+crop = []
