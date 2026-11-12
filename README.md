@@ -47,14 +47,14 @@ events ──► gallery (index.html, wyniki.csv, thumbnails, clips, full frames
 Build the package (any Debian/Ubuntu machine with `dpkg-deb`):
 
 ```bash
-bash packaging/build-deb.sh            # → dist/szukaj-cpu_1.0.2_all.deb
+bash packaging/build-deb.sh            # → dist/szukaj-cpu_1.0.3_all.deb
 ```
 
 Install on the server (needs internet access – the post-install step creates the Python
 environment with OpenVINO and OpenCV):
 
 ```bash
-sudo apt install ./szukaj-cpu_1.0.2_all.deb
+sudo apt install ./szukaj-cpu_1.0.3_all.deb
 szukaj-cpu --init                       # creates ~/.szukaj_cpu/szukaj_cpu.toml
 nano ~/.szukaj_cpu/szukaj_cpu.toml      # cameras, gallery path, Shinobi, ntfy
 sudo usermod -aG render,video $USER     # iGPU access (log in again)
@@ -80,7 +80,7 @@ journalctl -u szukaj_cpu@$USER -f
 ```bash
 bash uninstall.sh          # stops szukaj_cpu.service, moves config, models and static
                            # ffmpeg to ~/.szukaj_cpu, removes ~/szukaj_cpu
-sudo apt install ./szukaj-cpu_1.0.2_all.deb
+sudo apt install ./szukaj-cpu_1.0.3_all.deb
 sudo systemctl enable --now szukaj_cpu@$USER
 ```
 
@@ -108,6 +108,36 @@ Camera settings: in the **substream** set the I-frame interval to the frame rate
 turn Smart Codec / H.264+ off. The main stream can stay as it is.
 
 The configuration contains camera passwords and API keys – it is created with mode `600`.
+
+### Detection area: `zone` and `crop`
+
+* `zone = [[x, y], …]` – polygon (fractions 0–1 of the frame); a person counts only when the
+  bottom-centre of the box (their feet) lies inside it. The whole frame is still analysed.
+* `crop = [x1, y1, x2, y2]` – rectangle; only this part of the frame goes to the model.
+  Smaller area = people appear larger to the model, so distant figures are detected better.
+  `[]` = whole frame.
+
+## Web panel
+
+The gallery server (`http_port` in `[gallery]`) can also edit `zone` and `crop` in the
+browser: choose a camera, click the polygon corners or drag the crop rectangle on a live
+snapshot, then **Save and apply** – the values are written to `szukaj_cpu.toml` (a `.bak`
+copy is kept, file mode preserved) and take effect immediately, without a restart.
+**Restart service** restarts the process (systemd brings it back via `Restart=always`).
+
+The panel is enabled only when a login is set; the whole site (gallery included) then
+requires HTTP Basic authentication:
+
+```toml
+[gallery]
+http_port = 8091
+http_user = "damian"
+http_password = "long random password"
+```
+
+Open `http://SERVER:8091/admin/`. Basic auth over plain HTTP is fine in the home network;
+from outside use Tailscale, e.g. `sudo tailscale serve --bg --https=8443 http://localhost:8091`
+→ `https://SERVER.TAILNET.ts.net:8443/admin/`. Do not expose the port to the internet.
 
 ## Local ntfy server
 
